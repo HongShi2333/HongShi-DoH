@@ -1,23 +1,6 @@
 [build]
   publish = "public"
 
-# Root path supports DoH (GET ?dns= / POST application/dns-message). Non-DoH goes to /ui
 [[edge_functions]]
-path = "/"
-function = "dns"
-
-[[edge_functions]]
-path = "/dns-query"
-function = "dns"
-
-[[edge_functions]]
-path = "/resolve"
-function = "dns"
-
-[[edge_functions]]
-path = "/ip"
-function = "dns"
-
-[[edge_functions]]
-path = "/ip-info"
+path = "/*"
 function = "dns"

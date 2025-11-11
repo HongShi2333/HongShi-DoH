@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HongShi-DoH UI</title>
+  <link rel="icon" href="/favicon.png">
+  <style>
+    :root{ --bg:#0b1020; --card:#121836; --accent:#6aa6ff; --muted:#c8cff9; --border:#2a3170; }
+    *{ box-sizing:border-box }
+    body{ margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:var(--bg); color:#e8ecff }
+    .wrap{ max-width:980px; margin:0 auto; padding:28px 16px }
+    header{ display:flex; align-items:center; gap:12px; margin-bottom:16px }
+    .avatar{ width:42px; height:42px; border-radius:12px; border:1px solid var(--border); object-fit:cover }
+    .brand{ font-size:22px; font-weight:700 }
+    .card{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:18px; box-shadow:0 10px 30px rgba(0,0,0,.35) }
+    .row{ display:flex; gap:12px; flex-wrap:wrap; margin:10px 0 16px }
+    input,select{ flex:1; min-width:200px; background:#0f1430; border:1px solid var(--border); color:#e8ecff; padding:12px 14px; border-radius:12px; outline:none }
+    button{ background:var(--accent); color:#05122b; border:0; border-radius:12px; padding:12px 18px; font-weight:800; cursor:pointer; box-shadow:0 12px 24px rgba(106,166,255,.25) }
+    button:disabled{ opacity:.6; cursor:not-allowed }
+    .muted{ color:var(--muted) }
+    .grid{ display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:16px }
+    @media (max-width: 800px){ .grid{ grid-template-columns: 1fr } }
+    pre{ background:#0b1333; border:1px solid var(--border); padding:12px; border-radius:12px; overflow:auto }
+    table{ width:100%; border-collapse: collapse }
+    th,td{ padding:8px 10px; border-bottom:1px solid #1e244f }
+    .tag{ display:inline-block; font-size:12px; padding:2px 6px; border-radius:999px; background:#0f1430; border:1px solid var(--border); color:var(--muted) }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <img class="avatar" src="/favicon.png" alt="avatar">
+      <div class="brand">HongShi-DoH</div>
+    </header>
+
+    <div class="card">
+      <div class="row">
+        <input id="name" placeholder="example.com" value="example.com">
+        <select id="type">
+          <option value="all" selected>ALL (A + AAAA + NS)</option>
+          <option value="A">A</option>
+          <option value="AAAA">AAAA</option>
+          <option value="NS">NS</option>
+          <option value="TXT">TXT</option>
+          <option value="MX">MX</option>
+          <option value="CNAME">CNAME</option>
+        </select>
+        <select id="doh">
+          <option value="current" selected>当前站点</option>
+          <option value="https://dns.google/resolve">dns.google/resolve</option>
+          <option value="https://cloudflare-dns.com/resolve">cloudflare-dns.com/resolve</option>
+          <option value="custom">自定义…</option>
+        </select>
+        <input id="custom" style="display:none" placeholder="https://example.com/dns-query">
+        <button id="go">查询</button>
+      </div>
+      <div class="muted">使用 <code>/resolve</code> JSON 接口；根路径 <code>/</code> 与 <code>/dns-query</code> 亦支持 RFC8484。</div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="muted">简表</div>
+        <div id="table"></div>
+      </div>
+      <div class="card">
+        <div class="muted">原始 JSON</div>
+        <pre id="raw">{}</pre>
+      </div>
+    </div>
+  </div>
+
+<script>
+const $ = s=>document.querySelector(s);
+const nameI = $('#name'), typeS = $('#type'), dohS = $('#doh'), customI = $('#custom'), raw = $('#raw'), table = $('#table');
+
+dohS.addEventListener('change', ()=>{
+  customI.style.display = dohS.value==='custom' ? 'block':'none';
+});
+
+function rrToStr(rr){
+  if (!rr) return '';
+  return rr.data || rr.ip || rr.txt || (typeof rr === 'string' ? rr : JSON.stringify(rr));
+}
+
+function renderTable(json){
+  const ans = json.Answer || [];
+  if (!ans.length){ table.innerHTML = '<div class="muted">无记录</div>'; return; }
+  table.innerHTML = '<table><thead><tr><th>类型</th><th>名称</th><th>值</th><th>TTL</th></tr></thead><tbody>' +
+    ans.map(a=>`<tr><td><span class="tag">${a.type}</span></td><td>${a.name||''}</td><td>${rrToStr(a)}</td><td>${a.TTL||a.ttl||''}</td></tr>`).join('') +
+    '</tbody></table>';
+}
+
+async function query(){
+  const name = nameI.value.trim(); if (!name) return alert('请输入域名');
+  let doh = dohS.value==='current' ? location.origin + '/dns-query' : (dohS.value==='custom' ? customI.value.trim() : dohS.value);
+  if (!doh) return alert('请输入自定义 DoH 地址');
+  const u = new URL(location.origin + '/resolve');
+  u.searchParams.set('name', name);
+  u.searchParams.set('type', typeS.value);
+  u.searchParams.set('doh', doh);
+  try{
+    const res = await fetch(u.toString());
+    const json = await res.json();
+    raw.textContent = JSON.stringify(json, null, 2);
+    renderTable(json);
+  } catch (e){
+    raw.textContent = String(e);
+    table.innerHTML = '<div class="muted">请求失败</div>';
+  }
+}
+
+$('#go').addEventListener('click', query);
+nameI.addEventListener('keydown', e=>{ if(e.key==='Enter') query(); });
+</script>
+</body>
+</html>

@@ -2,29 +2,36 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>HongShi-DoH</title>
+  <link rel="icon" href="/favicon.png">
   <style>
-    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; margin: 0; background: #0b1020; color: #e8ecff;}
-    .wrap { max-width: 840px; margin: 0 auto; padding: 32px 16px; }
-    .card { background: #121836; border: 1px solid #2a3170; border-radius: 16px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,.3);}
-    h1 { margin: 0 0 8px; font-size: 28px; }
-    p { color: #c8cff9; }
-    code { background: #0f1430; padding: 2px 6px; border-radius: 6px; border: 1px solid #2a3170; }
-    .btn { appearance: none; background: #5b7cfa; border: 0; color: white; padding: 10px 16px; border-radius: 10px; font-weight: 600; cursor: pointer; box-shadow: 0 8px 16px rgba(91,124,250,.25);}
-    .btn:hover { filter: brightness(1.05); }
-    .row { display: flex; gap: 12px; flex-wrap: wrap; margin: 12px 0; }
-    .input { flex: 1; min-width: 220px; background: #0f1430; border: 1px solid #2a3170; color:#e8ecff; padding: 12px 14px; border-radius: 10px; outline: none; }
-    .muted { font-size: 13px; opacity: .85; }
-    .link { color: #8fb0ff; text-decoration: none; }
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:#0b1020;color:#e8ecff}
+    .wrap{max-width:900px;margin:0 auto;padding:40px 16px}
+    .hero{display:flex;gap:18px;align-items:center;margin-bottom:18px}
+    .avatar{width:56px;height:56px;border-radius:16px;border:1px solid #2a3170;object-fit:cover}
+    h1{margin:0;font-size:28px}
+    .card{background:#121836;border:1px solid #2a3170;border-radius:16px;padding:20px;box-shadow:0 8px 28px rgba(0,0,0,.35)}
+    code{background:#0f1430;border:1px solid #2a3170;border-radius:6px;padding:2px 6px}
+    a{color:#8fb0ff;text-decoration:none}
+    .actions{display:flex;gap:12px;margin-top:16px}
+    .btn{background:#5b7cfa;color:#fff;border:0;border-radius:10px;padding:10px 16px;font-weight:600;cursor:pointer}
+    .btn.alt{background:#2a3170}
   </style>
 </head>
 <body>
   <div class="wrap">
+    <div class="hero">
+      <img class="avatar" src="/favicon.png" alt="avatar">
+      <h1>HongShi-DoH</h1>
+    </div>
     <div class="card">
-      <h1>Netlify Edge DoH Proxy</h1>
-      <p>该服务同时支持 <code>/dns-query</code>（二进制 DoH，RFC 8484）与 <code>/resolve</code>（JSON）。根路径 <code>/</code> 也可作为 DoH 端点（GET 携带 <code>?dns=</code> 或 POST <code>application/dns-message</code>）。</p>
-      <p class="muted">需要可视化查询？前往 <a class="link" href="/ui">/ui</a> 页面。</p>
+      <p>高性能 DNS-over-HTTPS 代理，支持 <code>/</code> 与 <code>/dns-query</code>（RFC8484），并提供 JSON 接口 <code>/resolve</code> 与可视化页面 <a href="/ui/">/ui</a>。</p>
+      <div class="actions">
+        <a class="btn" href="/ui/">打开查询 UI</a>
+        <a class="btn alt" href="/ip">查看我的 IP</a>
+      </div>
+      <p style="opacity:.85;margin-top:6px">上游可通过环境变量 <code>DOH</code> 定义，缺省为 <code>cloudflare-dns.com</code>。</p>
     </div>
   </div>
 </body>

@@ -1,1 +1,66 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>HongShi‑DoH</title><link rel="icon" href="/favicon.png"><style>body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:linear-gradient(135deg,#ff8a00,#ff5e62);min-height:100vh;display:grid;place-items:center}.card{width:880px;max-width:92vw;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.35);border-radius:18px;box-shadow:0 24px 80px rgba(255,94,98,.25);padding:22px;margin:40px 0}header{display:flex;align-items:center;gap:14px;margin-bottom:12px}.avatar{width:48px;height:48px;border-radius:14px;border:1px solid rgba(255,255,255,.35);object-fit:cover}h1{margin:0;font-size:28px}a.btn{display:inline-block;margin-top:8px;background:#ff6a3d;color:#fff;padding:10px 16px;border-radius:12px;text-decoration:none;font-weight:800}a.muted{color:#1a2b6c;background:#eef3ff;border:1px solid #d9e4ff;margin-left:8px}</style></head><body><div class="card"><header><img src="/favicon.png" class="avatar" alt="avatar"><h1>HongShi‑DoH</h1></header><p>根路径支持 DoH 请求（<code>?dns=</code> / POST），普通访问会跳转到 <code>/ui/</code>；JSON 端点 <code>/resolve</code>；默认端点 <code>/dns-query</code>（可用 token 切换）。</p><a class="btn" href="/ui/">打开查询 UI</a><a class="btn muted" href="/ip">查看我的 IP</a></div></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HongShi-DoH</title>
+  <link rel="icon" href="/favicon.png">
+  <style>
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:linear-gradient(135deg,#ff8a00,#ff5e62);min-height:100vh;display:grid;place-items:center}
+    .card{width:920px;max-width:92vw;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.35);border-radius:18px;box-shadow:0 24px 80px rgba(255,94,98,.25);padding:24px;margin:40px 0}
+    header{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+    .avatar{width:48px;height:48px;border-radius:14px;border:1px solid rgba(0,0,0,.05);object-fit:cover}
+    h1{margin:0;font-size:28px}
+    .muted{color:#445}
+    .row{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+    a.btn{display:inline-block;background:#ff6a3d;color:#fff;padding:10px 16px;border-radius:12px;text-decoration:none;font-weight:800}
+    a.btn.alt{background:#eef3ff;color:#1a2b6c;border:1px solid #d9e4ff}
+    code{background:#fff5f2;border:1px solid #ffd8cf;border-radius:8px;padding:2px 6px}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <header>
+      <img src="/favicon.png" class="avatar" alt="avatar">
+      <div>
+        <h1>HongShi-DoH</h1>
+        <div class="muted">安全模式：根路径不提供 DoH，仅作导航与状态展示</div>
+      </div>
+    </header>
+
+    <p class="muted">
+      当前站点端点：
+      <code id="ep">检测中…</code>
+      <span id="hint" class="muted"></span>
+    </p>
+
+    <div class="row">
+      <a class="btn" href="/ui/">打开查询 UI</a>
+      <a class="btn alt" href="/ip" target="_blank" rel="noreferrer">查看 IP 与归属地</a>
+      <a class="btn alt" href="/host" target="_blank" rel="noreferrer">查看主机/平台信息</a>
+      <a class="btn alt" href="/resolve?name=example.com&type=A" target="_blank" rel="noreferrer">试试 /resolve</a>
+    </div>
+
+    <p class="muted" style="margin-top:14px">
+      如已设置 <code>DOH_PATH</code> ≠ <code>dns-query</code>，仅 <code>/%DOH_PATH%</code> 可用，<code>/dns-query</code> 将 404。
+    </p>
+  </div>
+
+  <script>
+    (async () => {
+      try {
+        const r = await fetch('/meta');
+        if (!r.ok) throw 0;
+        const j = await r.json();
+        const ep = document.getElementById('ep');
+        const hint = document.getElementById('hint');
+        const path = j?.dohPath || 'dns-query';
+        ep.textContent = location.origin + '/' + path;
+        hint.textContent = (j?.dnsQueryEnabled === false) ? '（已禁用 /dns-query）' : '（/dns-query 可用）';
+      } catch {
+        document.getElementById('ep').textContent = '未知（/meta 获取失败）';
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,10 +1,10 @@
-// HongShi-DoH Netlify Edge function
+// HongShi-DoH Netlify Edge function (homepage + DOH_PATH + /ip geo + /meta)
 const DEFAULT_DOH = 'cloudflare-dns.com';
 
 function getEnv() {
   return {
     DOH: Deno.env.get('DOH') ?? '',
-    HSD_PATH: Deno.env.get('HSD_PATH') ?? Deno.env.get('TOKEN') ?? 'dns-query',
+    DOH_PATH: Deno.env.get('DOH_PATH') ?? Deno.env.get('HSD_PATH') ?? Deno.env.get('TOKEN') ?? 'dns-query',
   };
 }
 function dohHost(env){ const base=(env.DOH||DEFAULT_DOH).replace(/^https?:\/\//,''); return base.split('/')[0]; }
@@ -50,20 +50,34 @@ async function handleDoHBinary(request,env){
   const init=isGetDns?{headers:{'accept':'application/dns-message','user-agent':'HongShi-DoH/edge'}}:{method:'POST',headers:{'accept':'application/dns-message','content-type':'application/dns-message','user-agent':'HongShi-DoH/edge'},body:await request.arrayBuffer()};
   const r=await fetch(upstream,init); return new Response(r.body,{status:r.status,headers:cors(new Headers({'content-type':'application/dns-message'}))});
 }
+function parseNetlifyGeo(request){
+  try{ const raw=request.headers.get('x-nf-geo'); if(!raw) return null; return JSON.parse(raw); }catch{ return null; }
+}
 export default async (request)=>{
-  const env=getEnv(); const url=new URL(request.url); const pathname=url.pathname;
-  // Root smart split
-  if (pathname === '/') {
-    const hasDoHParam = url.searchParams.has('dns') || url.searchParams.has('name') || request.method === 'POST';
-    if (!hasDoHParam) return Response.redirect(url.origin + '/ui/', 302);
-    return handleDoHBinary(request, env);
+  const env=getEnv(); const url=new URL(request.url); const pathname=url.pathname; const dohPath=`/${env.DOH_PATH}`; const dnsQueryEnabled=env.DOH_PATH==='dns-query';
+
+  // Homepage: GET / → 静态 public/index.html；其它方法 → 404
+  if (pathname === '/' && request.method === 'GET') return fetch(request);
+  if (pathname === '/') return new Response('Not Found', { status: 404 });
+
+  if (pathname === dohPath) return handleDoHBinary(request,env);
+  if (!dnsQueryEnabled && pathname==='/dns-query') return new Response('Not Found',{status:404,headers:cors(new Headers({'content-type':'text/plain; charset=utf-8'}))});
+  if (pathname==='/resolve') return handleResolve(request,env);
+
+  if (pathname==='/ip'){
+    const ip=request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()||request.headers.get('x-real-ip')||request.headers.get('cf-connecting-ip')||'0.0.0.0';
+    const geo=parseNetlifyGeo(request)||{};
+    return new Response(JSON.stringify({ip,city:geo.city,country:geo.country?.code||geo.country,region:geo.subdivision?.code||geo.subdivision,latitude:geo.latitude,longitude:geo.longitude,timezone:geo.timezone},null,2),{headers:cors(new Headers({'content-type':'application/json'}))});
   }
-  const tokenPath=`/${env.HSD_PATH}`; const tokenEnabled=!!env.HSD_PATH && env.HSD_PATH!=='dns-query';
-  if(tokenEnabled && pathname===tokenPath) return handleDoHBinary(request,env);
-  if(tokenEnabled && pathname==='/dns-query') return new Response('Not Found',{status:404,headers:cors(new Headers({'content-type':'text/plain; charset=utf-8'}))});
-  if(pathname==='/resolve') return handleResolve(request,env);
-  if(pathname==='/ip'){ const ip=request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()||request.headers.get('x-real-ip')||request.headers.get('cf-connecting-ip')||'0.0.0.0'; return new Response(ip+'\\n',{headers:cors(new Headers({'content-type':'text/plain; charset=utf-8'}))}); }
-  if(pathname==='/ip-info'){ const r=await fetch('https://1.1.1.1/cdn-cgi/trace'); const txt=await r.text(); return new Response(txt,{headers:cors(new Headers({'content-type':'text/plain; charset=utf-8'}))}); }
-  if(pathname==='/host'){ let hostname='unknown'; try { hostname = (Deno as any).hostname?.() || hostname; } catch {} return new Response(JSON.stringify({hostname},null,2),{headers:cors(new Headers({'content-type':'application/json'}))}); }
+  if (pathname==='/host'){
+    let hostname='unknown'; try{ hostname=(Deno as any).hostname?.()||hostname; }catch{}
+    if (hostname==='localhost') hostname=undefined;
+    const geo=parseNetlifyGeo(request)||{}; const id=request.headers.get('x-nf-request-id')||undefined;
+    return new Response(JSON.stringify({platform:'netlify',hostname,region:geo.country?.code||geo.country,city:geo.city,request_id:id},null,2),{headers:cors(new Headers({'content-type':'application/json'}))});
+  }
+  if (pathname==='/meta'){
+    return new Response(JSON.stringify({dohPath:env.DOH_PATH,dnsQueryEnabled},null,2),{headers:cors(new Headers({'content-type':'application/json'}))});
+  }
+
   return fetch(request);
 }

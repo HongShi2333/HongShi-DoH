@@ -1,5 +1,5 @@
 export const runtime = 'edge';
-const token = process.env.HSD_PATH || process.env.TOKEN;
+const dohPath = process.env.DOH_PATH || process.env.HSD_PATH || process.env.TOKEN || 'dns-query';
 async function doh(req: Request): Promise<Response> {
   const DEFAULT_DOH='cloudflare-dns.com';
   const dohHost=(process.env.DOH||DEFAULT_DOH).replace(/^https?:\/\//,'').split('/')[0];
@@ -14,6 +14,6 @@ async function doh(req: Request): Promise<Response> {
   const r=await fetch(upstream,init);
   return new Response(r.body,{status:r.status,headers:{'access-control-allow-origin':'*','content-type':'application/dns-message'}});
 }
-export async function GET(req: Request){ if(token && token!=='dns-query') return new Response('Not Found',{status:404}); return doh(req); }
-export async function POST(req: Request){ if(token && token!=='dns-query') return new Response('Not Found',{status:404}); return doh(req); }
+export async function GET(req: Request){ if(dohPath!=='dns-query') return new Response('Not Found',{status:404}); return doh(req); }
+export async function POST(req: Request){ if(dohPath!=='dns-query') return new Response('Not Found',{status:404}); return doh(req); }
 export async function OPTIONS(){ const h=new Headers(); h.set('access-control-allow-origin','*'); h.set('access-control-allow-methods','GET, POST, OPTIONS'); h.set('access-control-allow-headers','*'); return new Response(null,{status:204,headers:h}); }

@@ -46,49 +46,6 @@
 2. 可设置 `DOH_PATH` 环境变量自定义路径。
 3. 自动路由 `/resolve`、`/dns-query`、`/[token]`、`/ip`、`/host`。
 
----
-
-## 🧠 Python IP 定位服务
-
-路径：`/python/ip_query.py`
-
-### 🔧 依赖安装
-
-```bash
-cd python
-pip install -r requirements.txt
-~~~
-
-### 📦 依赖列表
-
-- `fastapi`
-- `uvicorn`
-- `maxminddb`
-
-### 📍 启动服务
-
-```bash
-python ip_query.py
-```
-
-默认端口：`8080`
-
-支持：
-
-- `/`：自动返回请求 IP 定位结果
-- `/{ip}`：手动查询任意 IP
-- 自动记录日志至 `ip_query.log`
-
-### 📁 数据库文件
-
-| 文件                 | 说明                             |
-| -------------------- | -------------------------------- |
-| `GeoLite2-City.mmdb` | 城市级定位数据库                 |
-| `GeoLite2-ASN.mmdb`  | 自治系统 ASN 信息                |
-| `GeoCN.mmdb`         | 中国区精细化数据库（需自行放置） |
-
-------
-
 ## ✨ UI 界面预览
 
 UI 页面位于 `/ui/`
